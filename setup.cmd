@@ -1,0 +1,1 @@
+mvn install:install-file -Dfile="./lib/orebfuscator-lib-patched.jar" -DgroupId="net.imprex" -Dversion="1.0" -DartifactId=orebfuscator-lib -Dpackaging=jar -DgeneratePom=true

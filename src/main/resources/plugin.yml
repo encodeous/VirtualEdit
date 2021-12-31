@@ -1,0 +1,7 @@
+name: VirtualEdit
+version: '${project.version}'
+main: ca.encodeous.virtualedit.Plugin
+api-version: 1.13
+depend: [ ProtocolLib ]
+authors: [ Encodeous ]
+description: Packet based world editing
