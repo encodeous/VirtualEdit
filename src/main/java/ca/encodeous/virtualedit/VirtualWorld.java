@@ -4,11 +4,9 @@ import ca.encodeous.virtualedit.Data.ViewQueue;
 import ca.encodeous.virtualedit.Protocol.BukkitListener;
 import ca.encodeous.virtualedit.Protocol.ChunkListener;
 import ca.encodeous.virtualedit.Protocol.VirtualEditViewThread;
-import ca.encodeous.virtualedit.Utils.StubConfig;
 import ca.encodeous.virtualedit.World.VirtualWorldView;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
-import net.imprex.orebfuscator.NmsInstance;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -41,7 +39,6 @@ public class VirtualWorld implements Closeable {
             }
         }
         else return;
-        NmsInstance.initialize(new StubConfig());
         Instance.chunkListener = new ChunkListener(plugin);
     }
 
@@ -50,7 +47,9 @@ public class VirtualWorld implements Closeable {
     }
 
     public void AddPlayer(Player p){
-        playerViews.put(p.getUniqueId(), new VirtualWorldView(p));
+        VirtualWorldView vw = new VirtualWorldView(p);
+        playerViews.put(p.getUniqueId(), vw);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(chunkListener.getPlugin(), vw::RefreshViewport, 1);
     }
 
     public void RemovePlayer(Player p){
@@ -64,7 +63,6 @@ public class VirtualWorld implements Closeable {
     @Override
     public void close() throws IOException {
         chunkListener.unregister();
-        NmsInstance.close();
         for (VirtualEditViewThread thread : this.threads) {
             if (thread != null) {
                 thread.close();

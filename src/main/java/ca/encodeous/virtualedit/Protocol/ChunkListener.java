@@ -3,8 +3,6 @@ package ca.encodeous.virtualedit.Protocol;
 import ca.encodeous.virtualedit.Utils.PacketUtils;
 import ca.encodeous.virtualedit.VirtualWorld;
 import ca.encodeous.virtualedit.World.VirtualWorldView;
-import com.comphenix.packetwrapper.WrapperPlayServerBlockChange;
-import com.comphenix.packetwrapper.WrapperPlayServerMultiBlockChange;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -15,24 +13,26 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
-import net.imprex.orebfuscator.chunk.ChunkStruct;
-import net.imprex.orebfuscator.config.OrebfuscatorConfig;
-import net.imprex.orebfuscator.util.BlockPos;
-import net.imprex.orebfuscator.util.ChunkPosition;
-import net.imprex.orebfuscator.util.PermissionUtil;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
+import org.apache.commons.lang.CharSetUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
+import java.util.Map;
 import java.util.Set;
 
 public class ChunkListener extends PacketAdapter {
 
     private final AsynchronousManager manager;
     private final AsyncListenerHandler handler;
-    private ChunkProcessor processor;
 
     public ChunkListener(Plugin plugin) {
         super(plugin, PacketType.Play.Server.MAP_CHUNK, PacketType.Play.Server.BLOCK_CHANGE, PacketType.Play.Server.MULTI_BLOCK_CHANGE);
@@ -40,7 +40,6 @@ public class ChunkListener extends PacketAdapter {
         this.manager = ProtocolLibrary.getProtocolManager().getAsynchronousManager();
         handler = this.manager.registerAsyncHandler(this);
         handler.start((int) Math.ceil(Runtime.getRuntime().availableProcessors() / 2f));
-        processor = new ChunkProcessor();
     }
 
     @Override
@@ -50,12 +49,13 @@ public class ChunkListener extends PacketAdapter {
         VirtualWorldView view = VirtualWorld.GetPlayerView(player.getUniqueId());
         if(view == null) return;
         if(event.getPacketType() == PacketType.Play.Server.MAP_CHUNK){
-            ChunkStruct chunkStruct = new ChunkStruct(event.getPacket(), player.getWorld());
-            try{
-                processor.process(chunkStruct, view);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+            var packet = (ClientboundLevelChunkWithLightPacket) event.getPacket().getHandle();
+            var cWorld = (CraftWorld)player.getWorld();
+            var world = cWorld.getHandle();
+            LevelChunk chunk = world.getChunk(packet.getX(), packet.getZ());
+            var processed = view.ProcessChunk(chunk);
+            var procPacket = new ClientboundLevelChunkWithLightPacket(processed, world.getLightEngine(), null, null, true, false);
+            event.setPacket(PacketContainer.fromPacket(procPacket));
         }
         else if(event.getPacketType() == PacketType.Play.Server.MULTI_BLOCK_CHANGE){
             PacketContainer packet = event.getPacket();
@@ -79,11 +79,10 @@ public class ChunkListener extends PacketAdapter {
             }
         }
         else if(event.getPacketType() == PacketType.Play.Server.BLOCK_CHANGE){
-            WrapperPlayServerBlockChange pkt = new WrapperPlayServerBlockChange(event.getPacket());
-            Material mat = view.ProcessWorldView(pkt.getLocation().toVector());
+            var pos = event.getPacket().getBlockPositionModifier().read(0);
+            Material mat = view.ProcessWorldView(pos.toVector());
             if(mat != null){
-                pkt.setBlockData(WrappedBlockData.createData(mat));
-                event.setPacket(pkt.getHandle());
+                event.getPacket().getBlockData().write(0, WrappedBlockData.createData(mat));
             }
         }
     }
