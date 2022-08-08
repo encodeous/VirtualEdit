@@ -7,8 +7,7 @@ import org.bukkit.util.Vector;
 
 import java.util.HashSet;
 
-public class
-VirtualWorldLayer {
+public class VirtualWorldLayer {
     private HashSet<VirtualWorldChangeNotifier> Notifiers;
     public final Virtual3DWorld vWorld;
     public VirtualWorldLayer(){
@@ -90,7 +89,7 @@ VirtualWorldLayer {
             }
         }
         for(VirtualWorldChangeNotifier notif : notifications){
-            notif.UpdateViewport(this);
+            notif.updateViewport(this);
         }
     }
 }

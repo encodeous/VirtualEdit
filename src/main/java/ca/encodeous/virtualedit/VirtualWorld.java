@@ -2,7 +2,7 @@ package ca.encodeous.virtualedit;
 
 import ca.encodeous.virtualedit.Data.ViewQueue;
 import ca.encodeous.virtualedit.Protocol.BukkitListener;
-import ca.encodeous.virtualedit.Protocol.ChunkListener;
+import ca.encodeous.virtualedit.Protocol.ProtocolListener;
 import ca.encodeous.virtualedit.Protocol.VirtualEditViewThread;
 import ca.encodeous.virtualedit.World.VirtualWorldView;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VirtualWorld implements Closeable {
     public static VirtualWorld Instance;
     public static ProtocolManager Protocol;
-    public ChunkListener chunkListener;
+    public ProtocolListener chunkListener;
     private ConcurrentHashMap<UUID, VirtualWorldView> playerViews = new ConcurrentHashMap<>();
     public ViewQueue PlayerUpdateQueue;
     private VirtualEditViewThread[] threads;
@@ -39,7 +39,7 @@ public class VirtualWorld implements Closeable {
             }
         }
         else return;
-        Instance.chunkListener = new ChunkListener(plugin);
+        Instance.chunkListener = new ProtocolListener(plugin);
     }
 
     public static VirtualWorldView GetPlayerView(UUID p){
@@ -49,7 +49,7 @@ public class VirtualWorld implements Closeable {
     public void AddPlayer(Player p){
         VirtualWorldView vw = new VirtualWorldView(p);
         playerViews.put(p.getUniqueId(), vw);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(chunkListener.getPlugin(), vw::RefreshViewport, 1);
+//        Bukkit.getScheduler().scheduleSyncDelayedTask(chunkListener.getPlugin(), vw::RefreshViewport, 1);
     }
 
     public void RemovePlayer(Player p){
