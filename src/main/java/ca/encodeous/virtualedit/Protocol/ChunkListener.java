@@ -74,15 +74,16 @@ public class ChunkListener extends PacketAdapter {
                 }
             }
             if(changed){
-                PacketUtils.setChangeData(blockData, blockLocations, packet);
-                event.setPacket(packet);
+                PacketUtils.setChangeData(blockData, packet);
             }
         }
         else if(event.getPacketType() == PacketType.Play.Server.BLOCK_CHANGE){
-            var pos = event.getPacket().getBlockPositionModifier().read(0);
-            Material mat = view.ProcessWorldView(pos.toVector());
+            var packet = event.getPacket();
+            var pos = packet.getBlockPositionModifier();
+            var vec = pos.read(0).toVector();
+            Material mat = view.ProcessWorldView(vec);
             if(mat != null){
-                event.getPacket().getBlockData().write(0, WrappedBlockData.createData(mat));
+                packet.getBlockData().write(0, WrappedBlockData.createData(mat));
             }
         }
     }

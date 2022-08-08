@@ -105,6 +105,16 @@ public class VirtualWorldView {
         return null;
     }
 
+    public Material ProcessWorldView(int x, int y, int z){
+        for(VirtualWorldLayer layer : layers){
+            Material mat = layer.GetMaterialAt(x, y, z);
+            if(mat != null){
+                return mat;
+            }
+        }
+        return null;
+    }
+
     public int ProcessWorldViewId(int x, int y, int z){
         for(VirtualWorldLayer layer : layers){
             int id = layer.GetBlockIdAt(x, y, z);
