@@ -20,6 +20,9 @@ import net.minecraft.world.ticks.LevelChunkTicks;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlock;
+import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
+import org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -147,6 +150,7 @@ public class VirtualWorldView {
         var chunkZ = pos.z;
 
         int mx = chunkX << 4, my = section.bottomBlockY(), mz = chunkZ << 4;
+        boolean applied = false;
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
@@ -154,11 +158,13 @@ public class VirtualWorldView {
 //                        section.states.getAndSetUnchecked(i, j, k, state);
                     int id = view.ProcessWorldViewId(i + mx, j + my, k + mz);
                     if (id != Constants.DS_NULL_VALUE) {
-                        var state = Blocks.REDSTONE_BLOCK.defaultBlockState();
-                        section.states.getAndSetUnchecked(i, j, k, state);
+                        var state = (CraftBlockData)MaterialUtils.getMaterial(id).createBlockData();
+                        section.states.getAndSetUnchecked(i, j, k, state.getState());
+                        applied = true;
                     }
                 }
             }
         }
+        if(applied) section.recalcBlockCounts();
     }
 }
