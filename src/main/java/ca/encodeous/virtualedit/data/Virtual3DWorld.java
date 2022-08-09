@@ -6,36 +6,35 @@ import ca.encodeous.virtualedit.utils.DataUtils;
 public class Virtual3DWorld {
     final IntervalTree2D[] worldLayers;
     private int cnt = 1;
-    public Virtual3DWorld(){
-        worldLayers = new IntervalTree2D[400];
+    private final int xSize, ySize, zSize;
+    public Virtual3DWorld(int xs, int ys, int zs){
+        worldLayers = new IntervalTree2D[ys];
+        xSize = xs;
+        zSize = zs;
+        ySize = ys;
     }
-    IntervalTree2D GetYLayer(int y){
-        int q = y + 70;
+    IntervalTree2D GetYLayer(int q){
+        if(q < 0 || q >= ySize) return null;
         if(worldLayers[q] == null){
-            worldLayers[q] = new IntervalTree2D(0, Constants.MAX_WORLD_SIZE * 2, 0, Constants.MAX_WORLD_SIZE * 2);
+            worldLayers[q] = new IntervalTree2D(0, xSize, 0, zSize);
         }
         return worldLayers[q];
     }
 
     public int Query(int x, int y, int z){
-        try{
-            x += Constants.MAX_WORLD_SIZE / 2;
-            z += Constants.MAX_WORLD_SIZE / 2;
-            return DataUtils.TGb(GetYLayer(y).Query(x, z));
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        return Constants.DS_NULL_VALUE;
+        if(x < 0 || x >= xSize) return Constants.DS_NULL_VALUE;
+        if(z < 0 || z >= zSize) return Constants.DS_NULL_VALUE;
+        var layer = GetYLayer(y);
+        if(layer == null) return Constants.DS_NULL_VALUE;
+        return DataUtils.TGb(layer.Query(x, z));
     }
 
     public void Update(int x1, int x2, int y1, int y2, int z1, int z2, int val){
-        x1 += Constants.MAX_WORLD_SIZE / 2;
-        x2 += Constants.MAX_WORLD_SIZE / 2;
-        z1 += Constants.MAX_WORLD_SIZE / 2;
-        z2 += Constants.MAX_WORLD_SIZE / 2;
-        for(int i = y1; i <= y2; i++){
-            GetYLayer(i).Update(val, x1, x2, z1, z2, cnt);
+        synchronized (worldLayers){
+            for(int i = y1; i <= y2; i++){
+                GetYLayer(i).Update(val, x1, x2, z1, z2, cnt);
+            }
+            cnt++;
         }
-        cnt++;
     }
 }

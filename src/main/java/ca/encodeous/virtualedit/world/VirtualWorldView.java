@@ -86,7 +86,7 @@ public class VirtualWorldView {
 
     public BlockState processWorldView(Vector loc){
         for(VirtualWorldLayer layer : layers){
-            BlockState block = layer.getBlock(loc);
+            BlockState block = layer.getBlock(loc.getBlockX() - layer.xOffset, loc.getBlockY() - layer.yOffset, loc.getBlockZ() - layer.zOffset);
             if(block != null){
                 return block;
             }
@@ -94,9 +94,9 @@ public class VirtualWorldView {
         return null;
     }
 
-    public BlockState processWorldView(int x, int y, int z){
+    public BlockState processWorldView(int x, int y, int z, ResourceCache cache){
         for(VirtualWorldLayer layer : layers){
-            var block = layer.getBlock(x, y, z);
+            var block = layer.getBlock(x - layer.xOffset, y - layer.yOffset, z - layer.zOffset, cache);
             if(block != null){
                 return block;
             }
@@ -115,8 +115,9 @@ public class VirtualWorldView {
         var sec = chunk.getSections();
         LevelChunkSection[] arr = new LevelChunkSection[world.getSectionsCount()];
         assert world.getSectionsCount() == sec.length;
+        var cache = new ResourceCache();
         for(int i = 0; i < sec.length; i++){
-            var section = getSection(chunk.getPos(), i, world.getMinBuildHeight());
+            var section = getSection(chunk.getPos(), i, world.getMinBuildHeight(), cache);
             if(requireTransformations(section)){
                 var x = sec[i];
                 arr[i] = applySectionTransformations(x, section);
@@ -126,16 +127,15 @@ public class VirtualWorldView {
         }
         return arr;
     }
-    public BlockState[][][] getSection(ChunkPos pos, int secId, int mh){
+    public BlockState[][][] getSection(ChunkPos pos, int secId, int mh, ResourceCache cache){
         var cached = new BlockState[16][16][16];
-        VirtualWorldView view = VirtualWorld.GetPlayerView(player.getUniqueId());
         var chunkX = pos.x;
         var chunkZ = pos.z;
         int mx = chunkX << 4, my = mh + (secId << 4), mz = chunkZ << 4;
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
-                    cached[i][j][k] = view.processWorldView(i + mx, j + my, k + mz);
+                    cached[i][j][k] = processWorldView(i + mx, j + my, k + mz, cache);
                 }
             }
         }
@@ -165,9 +165,9 @@ public class VirtualWorldView {
                     var state = view[i][j][k];
                     if(i == j && j == k && k == 0){
                         svpv = state;
-                    }else if(Objects.equals(svpv, state)){
+                    }else if(!Objects.equals(svpv, state)){
                         isSingleValuePalette = false;
-                        if(svpv != null){
+                        if(state != null){
                             svpv = state;
                             break svpCheck;
                         }

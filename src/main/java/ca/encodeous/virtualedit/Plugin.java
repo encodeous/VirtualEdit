@@ -1,5 +1,6 @@
 package ca.encodeous.virtualedit;
 
+import ca.encodeous.virtualedit.data.nodestorage.PointerNode;
 import ca.encodeous.virtualedit.world.VirtualWorldLayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -16,7 +17,8 @@ public final class Plugin extends JavaPlugin implements Listener {
     public void onEnable() {
         // Plugin startup logic
         VirtualWorld.Initialize(this);
-        layer = new VirtualWorldLayer();
+        layer = new VirtualWorldLayer(200001, 181, 200001);
+        layer.translate(-100000, -64, -100000);
         Bukkit.getPluginManager().registerEvents(this, this);
 
         Material[] colors = new Material[]{
@@ -36,12 +38,15 @@ public final class Plugin extends JavaPlugin implements Listener {
         var start = System.currentTimeMillis();
 
         int cnt = 0;
-        for(int i = 0; i < 24; i+=2){
-            for(int j = -12000; j < 12000; j+=2) {
-                layer.setBlock(-200000, 200000, i, i, j, j, colors[cnt % colors.length]);
-                cnt++;
-            }
-        }
+        layer.setBlock(0, 200000, 0, 20, 0, 200000, Material.WHITE_CONCRETE);
+        layer.setPointer(Bukkit.getWorld("world_nether"), 0, 20, 0, 0, 0, 0, 200000, 80, 200000);
+        layer.setPointer(Bukkit.getWorld("world_the_end"), 0, 100, 0, 0, 40, 0, 200000, 80, 200000);
+//        for(int i = 0; i < 48; i++){
+//            for(int j = 0; j < 24000; j++) {
+//                layer.setBlock(0, 200000, i, i, j, j, Material.WHITE_CONCRETE);
+//                cnt++;
+//            }
+//        }
 
         System.out.println("Took " + (System.currentTimeMillis() - start) + " ms");
 
