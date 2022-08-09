@@ -4,7 +4,7 @@ import ca.encodeous.virtualedit.Constants;
 import ca.encodeous.virtualedit.utils.DataUtils;
 
 public class IntervalTree2D {
-    private static long NEUTRAL_VALUE = DataUtils.GetIntTuple(-1, Constants.DS_NULL_VALUE);
+    private static long NEUTRAL_VALUE = DataUtils.getIntTuple(-1, Constants.DS_NULL_VALUE);
     public IntervalTree1D data;
     public IntervalTree1D order;
     public int x1, x2, ym1, ym2;
@@ -18,7 +18,7 @@ public class IntervalTree2D {
         data = new IntervalTree1D(ym1, ym2);
         order = new IntervalTree1D(ym1, ym2);
     }
-    public void Extend(){
+    public void extend(){
         if(!hasInitialized && x1 != x2){
             hasInitialized = true;
             int mid = (x1 + x2) / 2;
@@ -26,36 +26,36 @@ public class IntervalTree2D {
             right = new IntervalTree2D(mid+1, x2, ym1, ym2);
         }
     }
-    public long Query(int x, int y){
+    public long query(int x, int y){
         if(x < x1 || x > x2) return NEUTRAL_VALUE;
         long val = NEUTRAL_VALUE;
         if(x1 != x2 && hasInitialized){
-            Extend();
+            extend();
             long mid = (x1 + x2) / 2;
             if(x <= mid){
-                val = left.Query(x, y);
+                val = left.query(x, y);
             }else{
-                val = right.Query(x, y);
+                val = right.query(x, y);
             }
         }
-        int a = DataUtils.TGa(val), b = DataUtils.TGb(val);
-        int ca = order.QueryY(y);
+        int a = DataUtils.tGa(val), b = DataUtils.tGb(val);
+        int ca = order.queryY(y);
         if(ca > a){
             a = ca;
-            b = data.QueryY(y);
+            b = data.queryY(y);
         }
-        return DataUtils.GetIntTuple(a, b);
+        return DataUtils.getIntTuple(a, b);
     }
-    public void Update(int newBlockData, int lbx, int ubx, int lby, int uby, int updateId){
+    public void update(int newBlockData, int lbx, int ubx, int lby, int uby, int updateId){
         if(x1 > ubx || x2 < lbx) return;
         if(lbx <= x1 && x2 <= ubx){
-            order.Update(updateId, lby, uby);
-            data.Update(newBlockData, lby, uby);
+            order.update(updateId, lby, uby);
+            data.update(newBlockData, lby, uby);
         }
         else{
-            Extend();
-            left.Update(newBlockData, lbx, ubx, lby, uby, updateId);
-            right.Update(newBlockData, lbx, ubx, lby, uby, updateId);
+            extend();
+            left.update(newBlockData, lbx, ubx, lby, uby, updateId);
+            right.update(newBlockData, lbx, ubx, lby, uby, updateId);
         }
     }
 }

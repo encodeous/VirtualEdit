@@ -11,11 +11,11 @@ public enum MCVersion{
     public int getValue() {
         return value;
     }
-    public static MCVersion QueryVersion(){
+    public static MCVersion queryVersion(){
         String[] s = Bukkit.getBukkitVersion().split("[.-]");
         return MCVersion.valueOf("v"+s[0]+"_"+s[1]);
     }
-    public static boolean IsPaper(){
+    public static boolean isPaper(){
         boolean isPaper = false;
         try {
             Class.forName("com.destroystokyo.paper.ParticleBuilder");

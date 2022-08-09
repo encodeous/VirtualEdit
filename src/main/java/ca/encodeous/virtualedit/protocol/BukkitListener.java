@@ -9,10 +9,11 @@ import org.bukkit.event.player.*;
 public class BukkitListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void PlayerLoginEvent(PlayerLoginEvent event){
-        VirtualWorld.Instance.AddPlayer(event.getPlayer());
+        var p = event.getPlayer();
+        VirtualWorld.of(p.getWorld()).addPlayer(p);
     }
     @EventHandler(priority = EventPriority.LOWEST)
     public void PlayerQuitEvent(PlayerQuitEvent event){
-        VirtualWorld.Instance.RemovePlayer(event.getPlayer());
+        VirtualWorld.removePlayerFromAll(event.getPlayer());
     }
 }

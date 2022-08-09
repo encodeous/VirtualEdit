@@ -14,9 +14,6 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.chunk.LevelChunk;
-import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
@@ -39,7 +36,9 @@ public class ProtocolListener extends PacketAdapter {
         Player player = event.getPlayer();
         try{
             if(player == null) return;
-            VirtualWorldView view = VirtualWorld.GetPlayerView(player.getUniqueId());
+            var world = player.getWorld();
+            var vWorld = VirtualWorld.of(world);
+            VirtualWorldView view = vWorld.getView(player);
             if(view == null) return;
             if(!player.getWorld().equals(view.world)) return;
             if(event.getPacketType() == PacketType.Play.Server.MAP_CHUNK){
@@ -49,7 +48,7 @@ public class ProtocolListener extends PacketAdapter {
                     view.queuedChunkUpdates.remove(pos);
                     return;
                 }
-                event.setPacket(PacketContainer.fromPacket(view.makePacketForChunk(packet.getX(), packet.getZ())));
+                event.setPacket(PacketContainer.fromPacket(view.renderPacketForChunk(packet.getX(), packet.getZ())));
                 view.markForChunk(packet.getX(), packet.getX(), packet.getZ(), packet.getZ(), Constants.NO_UPDATE);
             }
             else if(event.getPacketType() == PacketType.Play.Server.MULTI_BLOCK_CHANGE){
@@ -62,7 +61,7 @@ public class ProtocolListener extends PacketAdapter {
                 boolean changed = false;
                 for(int i = 0; i < blockData.length; i++){
                     Vector q = PacketUtils.getShortLocation(blockLocations[i]);
-                    var state = view.processWorldView(q.add(v));
+                    var state = view.renderAt(q.add(v));
                     if(state != null){
                         blockData[i] = WrappedBlockData.fromHandle(state);
                         changed = true;
@@ -76,7 +75,7 @@ public class ProtocolListener extends PacketAdapter {
                 var packet = event.getPacket();
                 var pos = packet.getBlockPositionModifier();
                 var vec = pos.read(0).toVector();
-                var state = view.processWorldView(vec);
+                var state = view.renderAt(vec);
                 if(state != null){
                     packet.getBlockData().write(0, WrappedBlockData.fromHandle(state));
                 }

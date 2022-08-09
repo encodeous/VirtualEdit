@@ -1,6 +1,5 @@
 package ca.encodeous.virtualedit;
 
-import ca.encodeous.virtualedit.data.nodestorage.PointerNode;
 import ca.encodeous.virtualedit.world.VirtualWorldLayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -17,7 +16,7 @@ public final class Plugin extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         // Plugin startup logic
-        VirtualWorld.Initialize(this);
+        VirtualWorld.initialize(this);
         layer = new VirtualWorldLayer(201, 181, 201);
         layer.translate(-100, -64, -100);
         Bukkit.getPluginManager().registerEvents(this, this);
@@ -57,16 +56,14 @@ public final class Plugin extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        // Plugin startup logic
-        try {
-            VirtualWorld.Instance.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Plugin shutdown logic
+        VirtualWorld.cleanup();
     }
 
     @EventHandler
     public void PlayerLoginEvent(PlayerLoginEvent event){
-        VirtualWorld.GetPlayerView(event.getPlayer().getUniqueId()).pushLayer(layer);
+        var p = event.getPlayer();
+        var world = VirtualWorld.of(p.getWorld());
+        world.getView(p).pushLayer(layer);
     }
 }

@@ -1,10 +1,7 @@
 package ca.encodeous.virtualedit.protocol;
 
-import ca.encodeous.virtualedit.utils.MCVersion;
 import ca.encodeous.virtualedit.VirtualWorld;
-import org.bukkit.*;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,15 +15,19 @@ public class VirtualEditViewThread extends Thread{
     public void run() {
         while (this.running.get()) {
             try {
-                Player player = VirtualWorld.Instance.PlayerUpdateQueue.poll();
+                Player player = VirtualWorld.PlayerUpdateQueue.poll();
                 try {
                     if (player == null || !player.isOnline()) {
                         continue;
                     }
-                    var view = VirtualWorld.GetPlayerView(player.getUniqueId());
-                    view.sendChunksInRange();
+                    var world = player.getWorld();
+                    if(VirtualWorld.views.containsKey(world)){
+                        var vWorld = VirtualWorld.of(player.getWorld());
+                        var view = vWorld.getView(player);
+                        view.sendChunksInRange();
+                    }
                 } finally {
-                    VirtualWorld.Instance.PlayerUpdateQueue.unlock(player);
+                    VirtualWorld.PlayerUpdateQueue.unlock(player);
                 }
             } catch (InterruptedException e) {
                 break;

@@ -5,11 +5,9 @@ import ca.encodeous.virtualedit.data.nodestorage.BlockNode;
 import ca.encodeous.virtualedit.data.nodestorage.NodeMapper;
 import ca.encodeous.virtualedit.data.nodestorage.NodeStorable;
 import ca.encodeous.virtualedit.data.nodestorage.PointerNode;
-import ca.encodeous.virtualedit.utils.DataUtils;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
@@ -58,7 +56,7 @@ public class VirtualWorldLayer {
      * @return A node value
      */
     public int getNode(int x, int y, int z){
-        return world.Query(x, y, z);
+        return world.query(x, y, z);
     }
 
     public BlockState getBlock(Vector location){
@@ -66,7 +64,7 @@ public class VirtualWorldLayer {
     }
 
     public BlockState getBlock(int x, int y, int z){
-        var result = mapper.getNode(world.Query(x, y, z));
+        var result = mapper.getNode(world.query(x, y, z));
         if(result == null) return null;
         if(result instanceof BlockNode bn){
             return bn.getValue();
@@ -78,7 +76,7 @@ public class VirtualWorldLayer {
     }
 
     public BlockState getBlock(int x, int y, int z, ResourceCache cache){
-        var result = mapper.getNode(world.Query(x, y, z));
+        var result = mapper.getNode(world.query(x, y, z));
         if(result == null) return null;
         if(result instanceof BlockNode bn){
             return bn.getValue();
@@ -90,10 +88,10 @@ public class VirtualWorldLayer {
     }
 
     public void setNode(int x1, int x2, int y1, int y2, int z1, int z2, NodeStorable node){
-        world.Update(x1, x2, y1, y2, z1, z2, mapper.getId(node));
+        world.update(x1, x2, y1, y2, z1, z2, mapper.getId(node));
     }
     public void setBlock(int x1, int x2, int y1, int y2, int z1, int z2, Material material){
-        world.Update(x1, x2, y1, y2, z1, z2, mapper.getId(material));
+        world.update(x1, x2, y1, y2, z1, z2, mapper.getId(material));
     }
     public void setPointer(World world, int x, int y, int z, int pointerX, int pointerY, int pointerZ, int xSize, int ySize, int zSize){
         setNode(x, x + xSize - 1, y, y + ySize - 1, z, z + zSize - 1, new PointerNode(world, x, y, z, pointerX, pointerY, pointerZ, xSize, ySize, zSize));

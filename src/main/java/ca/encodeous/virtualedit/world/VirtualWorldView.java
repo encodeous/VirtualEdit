@@ -10,9 +10,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.server.MCUtil;
 import net.minecraft.server.level.ChunkMap;
-import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -20,7 +18,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraft.world.level.chunk.LightChunkGetter;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.ticks.LevelChunkTicks;
 import org.bukkit.World;
@@ -28,7 +25,6 @@ import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.Nullable;
 import oshi.util.tuples.Pair;
 
 import java.util.*;
@@ -38,13 +34,12 @@ import static ca.encodeous.virtualedit.utils.DataUtils.convertToSafeVal;
 import static ca.encodeous.virtualedit.utils.DataUtils.convertToSafeValChunk;
 
 public class VirtualWorldView {
-    private ArrayDeque<VirtualWorldLayer> layers;
+    public final ArrayDeque<VirtualWorldLayer> layers;
     private final IntervalTree2D updates;
     public final ConcurrentHashMap<ChunkPos, Object> queuedChunkUpdates;
-    private VirtualWorldChangeNotifier notifier;
-    private ThreadedLevelLightEngine lightEngine;
-    public World world;
-    private Player player;
+    private final VirtualWorldChangeNotifier notifier;
+    public final World world;
+    private final Player player;
     private int updateId = 0;
     public VirtualWorldView(Player p, World world){
         layers = new ArrayDeque<>();
@@ -69,17 +64,17 @@ public class VirtualWorldView {
     }
     public void markFor(int x1, int x2, int z1, int z2, int value) {
         synchronized (updates){
-            updates.Update(value, convertToSafeVal(x1), convertToSafeVal(x2), convertToSafeVal(z1), convertToSafeVal(z2), updateId++);
+            updates.update(value, convertToSafeVal(x1), convertToSafeVal(x2), convertToSafeVal(z1), convertToSafeVal(z2), updateId++);
         }
     }
     public void markForChunk(int x1, int x2, int z1, int z2, int value) {
         synchronized (updates){
-            updates.Update(value, convertToSafeValChunk(x1), convertToSafeValChunk(x2), convertToSafeValChunk(z1), convertToSafeValChunk(z2), updateId++);
+            updates.update(value, convertToSafeValChunk(x1), convertToSafeValChunk(x2), convertToSafeValChunk(z1), convertToSafeValChunk(z2), updateId++);
         }
     }
     public int getChunkMark(int x, int y){
         synchronized (updates){
-            return DataUtils.TGb(updates.Query(x + Constants.MAX_CHUNKS_AXIS / 2, y + Constants.MAX_CHUNKS_AXIS / 2));
+            return DataUtils.tGb(updates.query(x + Constants.MAX_CHUNKS_AXIS / 2, y + Constants.MAX_CHUNKS_AXIS / 2));
         }
     }
     public void pushLayer(VirtualWorldLayer layer){
@@ -106,10 +101,10 @@ public class VirtualWorldView {
     }
 
     public void refreshWorldView(){
-        VirtualWorld.Instance.PlayerUpdateQueue.offerAndLock(player);
+        VirtualWorld.PlayerUpdateQueue.offerAndLock(player);
     }
 
-    public BlockState processWorldView(Vector loc){
+    public BlockState renderAt(Vector loc){
         for(VirtualWorldLayer layer : layers){
             BlockState block = layer.getBlock(loc.getBlockX() - layer.xOffset, loc.getBlockY() - layer.yOffset, loc.getBlockZ() - layer.zOffset);
             if(block != null){
@@ -119,7 +114,7 @@ public class VirtualWorldView {
         return null;
     }
 
-    public BlockState processWorldView(int x, int y, int z, ResourceCache cache){
+    public BlockState renderAt(int x, int y, int z, ResourceCache cache){
         for(VirtualWorldLayer layer : layers){
             var block = layer.getBlock(x - layer.xOffset, y - layer.yOffset, z - layer.zOffset, cache);
             if(block != null){
@@ -195,31 +190,31 @@ public class VirtualWorldView {
         if (!player.isOnline()) {
             return;
         }
-        sp.connection.send(makePacketForChunk(x, z));
+        sp.connection.send(renderPacketForChunk(x, z));
     }
 
-    public ClientboundLevelChunkWithLightPacket makePacketForChunk(int x, int z){
+    public ClientboundLevelChunkWithLightPacket renderPacketForChunk(int x, int z){
         var cWorld = (CraftWorld)world;
         var sWorld = cWorld.getHandle();
-        var processed = processChunk(x, z);
+        var processed = renderChunk(x, z);
         return new ClientboundLevelChunkWithLightPacket(processed, sWorld.getLightEngine(), null, null, true, false);
     }
 
-    public LevelChunk processChunk(int x, int z){
+    public LevelChunk renderChunk(int x, int z){
         var level = ((CraftWorld)world).getHandle();
         var chunk = level.getChunk(x, z);
         return new LevelChunk(chunk.level, chunk.getPos(), chunk.getUpgradeData(), new LevelChunkTicks<>(), new LevelChunkTicks<>(),
-                chunk.getInhabitedTime(), transformSections(chunk, level), levelChunk -> {}, chunk.getBlendingData());
+                chunk.getInhabitedTime(), renderSections(chunk, level), levelChunk -> {}, chunk.getBlendingData());
     }
 
-    private LevelChunkSection[] transformSections(LevelChunk chunk, Level world){
+    private LevelChunkSection[] renderSections(LevelChunk chunk, Level world){
         var sec = chunk.getSections();
         LevelChunkSection[] arr = new LevelChunkSection[world.getSectionsCount()];
         assert world.getSectionsCount() == sec.length;
         var cache = new ResourceCache();
         for(int i = 0; i < sec.length; i++){
-            var section = getSection(chunk.getPos(), i, world.getMinBuildHeight(), cache);
-            if(requireTransformations(section)){
+            var section = readSection(chunk.getPos(), i, world.getMinBuildHeight(), cache);
+            if(isTransformRequired(section)){
                 var x = sec[i];
                 arr[i] = applySectionTransformations(x, section);
             }else{
@@ -228,7 +223,7 @@ public class VirtualWorldView {
         }
         return arr;
     }
-    public BlockState[][][] getSection(ChunkPos pos, int secId, int mh, ResourceCache cache){
+    public BlockState[][][] readSection(ChunkPos pos, int secId, int mh, ResourceCache cache){
         var cached = new BlockState[16][16][16];
         var chunkX = pos.x;
         var chunkZ = pos.z;
@@ -236,13 +231,13 @@ public class VirtualWorldView {
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
-                    cached[i][j][k] = processWorldView(i + mx, j + my, k + mz, cache);
+                    cached[i][j][k] = renderAt(i + mx, j + my, k + mz, cache);
                 }
             }
         }
         return cached;
     }
-    public boolean requireTransformations(BlockState[][][] view){
+    public boolean isTransformRequired(BlockState[][][] view){
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {

@@ -8,7 +8,6 @@ import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class ResourceCache {
     public final ConcurrentHashMap<World, ChunkCache> worlds = new ConcurrentHashMap<>();

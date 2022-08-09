@@ -13,7 +13,7 @@ public class Virtual3DWorld {
         zSize = zs;
         ySize = ys;
     }
-    IntervalTree2D GetYLayer(int q){
+    IntervalTree2D getYLayer(int q){
         if(q < 0 || q >= ySize) return null;
         if(worldLayers[q] == null){
             worldLayers[q] = new IntervalTree2D(0, xSize, 0, zSize);
@@ -21,18 +21,18 @@ public class Virtual3DWorld {
         return worldLayers[q];
     }
 
-    public int Query(int x, int y, int z){
+    public int query(int x, int y, int z){
         if(x < 0 || x >= xSize) return Constants.DS_NULL_VALUE;
         if(z < 0 || z >= zSize) return Constants.DS_NULL_VALUE;
-        var layer = GetYLayer(y);
+        var layer = getYLayer(y);
         if(layer == null) return Constants.DS_NULL_VALUE;
-        return DataUtils.TGb(layer.Query(x, z));
+        return DataUtils.tGb(layer.query(x, z));
     }
 
-    public void Update(int x1, int x2, int y1, int y2, int z1, int z2, int val){
+    public void update(int x1, int x2, int y1, int y2, int z1, int z2, int val){
         synchronized (worldLayers){
             for(int i = y1; i <= y2; i++){
-                GetYLayer(i).Update(val, x1, x2, z1, z2, cnt);
+                getYLayer(i).update(val, x1, x2, z1, z2, cnt);
             }
             cnt++;
         }

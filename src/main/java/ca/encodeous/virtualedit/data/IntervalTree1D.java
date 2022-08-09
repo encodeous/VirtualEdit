@@ -11,15 +11,15 @@ public class IntervalTree1D {
         min = l;
         max = r;
     }
-    public void Propagate(){
-        Extend();
+    public void propagate(){
+        extend();
         if(nodeBlockData != Constants.DS_NULL_VALUE){
             left.nodeBlockData = nodeBlockData;
             right.nodeBlockData = nodeBlockData;
             nodeBlockData = Constants.DS_NULL_VALUE;
         }
     }
-    public void Extend(){
+    public void extend(){
         if(min == max) return;
         int mid = (min + max) / 2;
         hasInitialized = true;
@@ -30,7 +30,7 @@ public class IntervalTree1D {
             right = new IntervalTree1D(mid+1, max);
         }
     }
-    public int QueryY(int y){
+    public int queryY(int y){
         if(min <= y && y <= max){
             if(nodeBlockData != Constants.DS_NULL_VALUE){
                 // lazy / fast return
@@ -40,24 +40,24 @@ public class IntervalTree1D {
                 return nodeBlockData;
             }
             if(!hasInitialized) return Constants.DS_NULL_VALUE;
-            Propagate();
+            propagate();
             int mid = (min + max) / 2;
             if(y <= mid){
-                return left.QueryY(y);
+                return left.queryY(y);
             }
-            else return right.QueryY(y);
+            else return right.queryY(y);
         }
         return Constants.DS_NULL_VALUE;
     }
-    public void Update(int newBlockData, long l, long r){
+    public void update(int newBlockData, long l, long r){
         if(min > r || max < l) return;
         if(l <= min && max <= r){
             nodeBlockData = newBlockData;
         }
         else{
-            Propagate();
-            left.Update(newBlockData, l, r);
-            right.Update(newBlockData, l, r);
+            propagate();
+            left.update(newBlockData, l, r);
+            right.update(newBlockData, l, r);
         }
     }
 }
