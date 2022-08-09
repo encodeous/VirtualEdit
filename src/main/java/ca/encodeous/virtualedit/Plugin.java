@@ -13,12 +13,13 @@ import java.io.IOException;
 
 public final class Plugin extends JavaPlugin implements Listener {
     VirtualWorldLayer layer = null;
+    private int cnt = 0;
     @Override
     public void onEnable() {
         // Plugin startup logic
         VirtualWorld.Initialize(this);
-        layer = new VirtualWorldLayer(200001, 181, 200001);
-        layer.translate(-100000, -64, -100000);
+        layer = new VirtualWorldLayer(201, 181, 201);
+        layer.translate(-100, -64, -100);
         Bukkit.getPluginManager().registerEvents(this, this);
 
         Material[] colors = new Material[]{
@@ -37,16 +38,15 @@ public final class Plugin extends JavaPlugin implements Listener {
 
         var start = System.currentTimeMillis();
 
-        int cnt = 0;
-        layer.setBlock(0, 200000, 0, 20, 0, 200000, Material.WHITE_CONCRETE);
-        layer.setPointer(Bukkit.getWorld("world_nether"), 0, 20, 0, 0, 0, 0, 200000, 80, 200000);
-        layer.setPointer(Bukkit.getWorld("world_the_end"), 0, 100, 0, 0, 40, 0, 200000, 80, 200000);
-//        for(int i = 0; i < 48; i++){
-//            for(int j = 0; j < 24000; j++) {
-//                layer.setBlock(0, 200000, i, i, j, j, Material.WHITE_CONCRETE);
-//                cnt++;
-//            }
-//        }
+        layer.setBlock(0, 200, 50, 50, 0, 200, Material.WHITE_CONCRETE);
+
+//        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, ()->{
+//            layer.setBlock(0, 200, cnt, cnt, 0, 200, Material.AIR);
+//            cnt++;
+//            cnt %= 181;
+//            layer.setBlock(0, 200, cnt, cnt, 0, 200, Material.WHITE_CONCRETE);
+//            layer.syncToClient();
+//        }, 0, 20);
 
         System.out.println("Took " + (System.currentTimeMillis() - start) + " ms");
 

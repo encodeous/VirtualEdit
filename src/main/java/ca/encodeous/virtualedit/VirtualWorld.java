@@ -32,7 +32,7 @@ public class VirtualWorld implements Closeable {
             Bukkit.getPluginManager().registerEvents(new BukkitListener(), plugin);
             Instance.threads = new VirtualEditViewThread[Constants.VIEW_UPDATE_THREADS];
             for (int i = 0; i < Constants.VIEW_UPDATE_THREADS; i++) {
-                VirtualEditViewThread thread = new VirtualEditViewThread(plugin);
+                VirtualEditViewThread thread = new VirtualEditViewThread();
                 thread.setDaemon(true);
                 thread.start();
                 Instance.threads[i] = thread;

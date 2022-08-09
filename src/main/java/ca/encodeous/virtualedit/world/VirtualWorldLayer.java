@@ -5,6 +5,7 @@ import ca.encodeous.virtualedit.data.nodestorage.BlockNode;
 import ca.encodeous.virtualedit.data.nodestorage.NodeMapper;
 import ca.encodeous.virtualedit.data.nodestorage.NodeStorable;
 import ca.encodeous.virtualedit.data.nodestorage.PointerNode;
+import ca.encodeous.virtualedit.utils.DataUtils;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -42,7 +43,6 @@ public class VirtualWorldLayer {
         for(VirtualWorldChangeNotifier notifier : subscribers){
             notifier.markForChange(xOffset, xOffset + xSize, zOffset, zOffset + zSize);
         }
-        syncToClient();
     }
 
     /**

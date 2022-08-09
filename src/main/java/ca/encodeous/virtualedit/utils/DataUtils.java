@@ -26,8 +26,11 @@ public class DataUtils {
         return true;
     }
 
-    public static int convertToChunk(int x){
-        return (x >> 4) + Constants.MAX_CHUNKS_AXIS / 2;
+    public static int convertToSafeVal(int x){
+        return ((x + Constants.MAX_WORLD_SIZE / 2) >> 4);
+    }
+    public static int convertToSafeValChunk(int x){
+        return x + Constants.MAX_CHUNKS_AXIS / 2;
     }
     public static long GetSChunkHash(int x, short y, int z){
         return ((long) x << 22) | ((long) z << 2) | y;

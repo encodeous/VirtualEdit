@@ -1,5 +1,6 @@
 package ca.encodeous.virtualedit.protocol;
 
+import ca.encodeous.virtualedit.Constants;
 import ca.encodeous.virtualedit.utils.PacketUtils;
 import ca.encodeous.virtualedit.VirtualWorld;
 import ca.encodeous.virtualedit.world.VirtualWorldView;
@@ -12,6 +13,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
@@ -39,13 +41,16 @@ public class ProtocolListener extends PacketAdapter {
             if(player == null) return;
             VirtualWorldView view = VirtualWorld.GetPlayerView(player.getUniqueId());
             if(view == null) return;
+            if(!player.getWorld().equals(view.world)) return;
             if(event.getPacketType() == PacketType.Play.Server.MAP_CHUNK){
                 var packet = (ClientboundLevelChunkWithLightPacket) event.getPacket().getHandle();
-                var cWorld = (CraftWorld)player.getWorld();
-                var world = cWorld.getHandle();
-                var processed = view.processChunk(packet.getX(), packet.getZ());
-                var procPacket = new ClientboundLevelChunkWithLightPacket(processed, world.getLightEngine(), null, null, true, false);
-                event.setPacket(PacketContainer.fromPacket(procPacket));
+                var pos = new ChunkPos(packet.getX(), packet.getZ());
+                if(view.queuedChunkUpdates.containsKey(pos)){
+                    view.queuedChunkUpdates.remove(pos);
+                    return;
+                }
+                event.setPacket(PacketContainer.fromPacket(view.makePacketForChunk(packet.getX(), packet.getZ())));
+                view.markForChunk(packet.getX(), packet.getX(), packet.getZ(), packet.getZ(), Constants.NO_UPDATE);
             }
             else if(event.getPacketType() == PacketType.Play.Server.MULTI_BLOCK_CHANGE){
                 PacketContainer packet = event.getPacket();

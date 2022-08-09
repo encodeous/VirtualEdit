@@ -1,5 +1,6 @@
 package ca.encodeous.virtualedit.data.nodestorage;
 
+import net.minecraft.world.level.block.Block;
 import org.bukkit.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
@@ -33,6 +34,6 @@ public class BlockNode implements NodeStorable<BlockState>{
 
     @Override
     public int hashCode() {
-        return Objects.hash(state);
+        return Block.getId(state);
     }
 }

@@ -16,10 +16,12 @@ public class NodeMapper {
 
     public int getId(Material mat) {
         if (mat == null) return Constants.DS_NULL_VALUE;
+        if (mat == Material.AIR) return Constants.DS_NULL_VALUE;;
         return getId(new BlockNode(mat));
     }
     public int getId(BlockState state) {
         if (state == null) return Constants.DS_NULL_VALUE;
+        if (state.isAir()) return Constants.DS_NULL_VALUE;;
         return getId(new BlockNode(state));
     }
     public int getId(NodeStorable node){
