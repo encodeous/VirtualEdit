@@ -1,8 +1,7 @@
-package ca.encodeous.virtualedit.Data;
+package ca.encodeous.virtualedit.data;
 
 import ca.encodeous.virtualedit.Constants;
-import ca.encodeous.virtualedit.Utils.DataUtils;
-import ca.encodeous.virtualedit.Utils.MaterialUtils;
+import ca.encodeous.virtualedit.utils.DataUtils;
 
 public class Virtual3DWorld {
     final IntervalTree2D[] worldLayers;

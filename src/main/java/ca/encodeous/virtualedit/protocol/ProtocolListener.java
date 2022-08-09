@@ -1,8 +1,8 @@
-package ca.encodeous.virtualedit.Protocol;
+package ca.encodeous.virtualedit.protocol;
 
-import ca.encodeous.virtualedit.Utils.PacketUtils;
+import ca.encodeous.virtualedit.utils.PacketUtils;
 import ca.encodeous.virtualedit.VirtualWorld;
-import ca.encodeous.virtualedit.World.VirtualWorldView;
+import ca.encodeous.virtualedit.world.VirtualWorldView;
 import com.comphenix.protocol.AsynchronousManager;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -43,8 +43,7 @@ public class ProtocolListener extends PacketAdapter {
                 var packet = (ClientboundLevelChunkWithLightPacket) event.getPacket().getHandle();
                 var cWorld = (CraftWorld)player.getWorld();
                 var world = cWorld.getHandle();
-                LevelChunk chunk = world.getChunk(packet.getX(), packet.getZ());
-                var processed = view.processChunk(chunk, world);
+                var processed = view.processChunk(packet.getX(), packet.getZ());
                 var procPacket = new ClientboundLevelChunkWithLightPacket(processed, world.getLightEngine(), null, null, true, false);
                 event.setPacket(PacketContainer.fromPacket(procPacket));
             }
@@ -58,9 +57,9 @@ public class ProtocolListener extends PacketAdapter {
                 boolean changed = false;
                 for(int i = 0; i < blockData.length; i++){
                     Vector q = PacketUtils.getShortLocation(blockLocations[i]);
-                    Material mat = view.processWorldView(q.add(v));
-                    if(mat != null){
-                        blockData[i] = WrappedBlockData.createData(mat);
+                    var state = view.processWorldView(q.add(v));
+                    if(state != null){
+                        blockData[i] = WrappedBlockData.fromHandle(state);
                         changed = true;
                     }
                 }
@@ -72,9 +71,9 @@ public class ProtocolListener extends PacketAdapter {
                 var packet = event.getPacket();
                 var pos = packet.getBlockPositionModifier();
                 var vec = pos.read(0).toVector();
-                Material mat = view.processWorldView(vec);
-                if(mat != null){
-                    packet.getBlockData().write(0, WrappedBlockData.createData(mat));
+                var state = view.processWorldView(vec);
+                if(state != null){
+                    packet.getBlockData().write(0, WrappedBlockData.fromHandle(state));
                 }
             }
         }catch (Exception e){

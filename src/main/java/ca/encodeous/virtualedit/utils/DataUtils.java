@@ -1,5 +1,6 @@
-package ca.encodeous.virtualedit.Utils;
+package ca.encodeous.virtualedit.utils;
 
+import ca.encodeous.virtualedit.Constants;
 import org.bukkit.util.Vector;
 
 public class DataUtils {
@@ -25,6 +26,9 @@ public class DataUtils {
         return true;
     }
 
+    public static int convertToChunk(int x){
+        return (x >> 4) + Constants.MAX_CHUNKS_AXIS / 2;
+    }
     public static long GetSChunkHash(int x, short y, int z){
         return ((long) x << 22) | ((long) z << 2) | y;
     }

@@ -1,4 +1,4 @@
-package ca.encodeous.virtualedit.Data;
+package ca.encodeous.virtualedit.data;
 
 import org.bukkit.entity.Player;
 
@@ -13,7 +13,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ViewQueue {
     private final Lock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
-
     private final Queue<Player> queue = new LinkedList<>();
     private final Set<Player> lockedPlayer = new HashSet<>();
 

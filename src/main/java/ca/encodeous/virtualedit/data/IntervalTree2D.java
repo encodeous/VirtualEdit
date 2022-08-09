@@ -1,7 +1,7 @@
-package ca.encodeous.virtualedit.Data;
+package ca.encodeous.virtualedit.data;
 
 import ca.encodeous.virtualedit.Constants;
-import ca.encodeous.virtualedit.Utils.DataUtils;
+import ca.encodeous.virtualedit.utils.DataUtils;
 
 public class IntervalTree2D {
     private static long NEUTRAL_VALUE = DataUtils.GetIntTuple(-1, Constants.DS_NULL_VALUE);

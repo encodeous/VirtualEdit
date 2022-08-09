@@ -1,10 +1,10 @@
 package ca.encodeous.virtualedit;
 
-import ca.encodeous.virtualedit.Data.ViewQueue;
-import ca.encodeous.virtualedit.Protocol.BukkitListener;
-import ca.encodeous.virtualedit.Protocol.ProtocolListener;
-import ca.encodeous.virtualedit.Protocol.VirtualEditViewThread;
-import ca.encodeous.virtualedit.World.VirtualWorldView;
+import ca.encodeous.virtualedit.data.ViewQueue;
+import ca.encodeous.virtualedit.protocol.BukkitListener;
+import ca.encodeous.virtualedit.protocol.ProtocolListener;
+import ca.encodeous.virtualedit.protocol.VirtualEditViewThread;
+import ca.encodeous.virtualedit.world.VirtualWorldView;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import org.bukkit.Bukkit;
@@ -47,7 +47,7 @@ public class VirtualWorld implements Closeable {
     }
 
     public void AddPlayer(Player p){
-        VirtualWorldView vw = new VirtualWorldView(p);
+        VirtualWorldView vw = new VirtualWorldView(p, p.getWorld());
         playerViews.put(p.getUniqueId(), vw);
 //        Bukkit.getScheduler().scheduleSyncDelayedTask(chunkListener.getPlugin(), vw::RefreshViewport, 1);
     }

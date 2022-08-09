@@ -1,13 +1,10 @@
 package ca.encodeous.virtualedit;
 
-import ca.encodeous.virtualedit.Utils.MaterialUtils;
-import ca.encodeous.virtualedit.World.VirtualWorldLayer;
+import ca.encodeous.virtualedit.world.VirtualWorldLayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -41,16 +38,16 @@ public final class Plugin extends JavaPlugin implements Listener {
         int cnt = 0;
         for(int i = 0; i < 24; i+=2){
             for(int j = -12000; j < 12000; j+=2) {
-                layer.vWorld.Update(-200000, 200000, i, i, j, j, MaterialUtils.getId(colors[cnt % colors.length]));
+                layer.setBlock(-200000, 200000, i, i, j, j, colors[cnt % colors.length]);
                 cnt++;
             }
         }
 
         System.out.println("Took " + (System.currentTimeMillis() - start) + " ms");
 
-        System.out.println(layer.GetBlockIdAt(-10, 0, -10));
-        System.out.println(layer.GetBlockIdAt(-10, 4, -10));
-        System.out.println(layer.GetBlockIdAt(0, 0, -10));
+        System.out.println(layer.getNode(-10, 0, -10));
+        System.out.println(layer.getNode(-10, 4, -10));
+        System.out.println(layer.getNode(0, 0, -10));
     }
 
     @Override

@@ -1,4 +1,4 @@
-package ca.encodeous.virtualedit.Data;
+package ca.encodeous.virtualedit.data;
 
 import ca.encodeous.virtualedit.Constants;
 

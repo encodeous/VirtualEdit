@@ -1,12 +1,10 @@
-package ca.encodeous.virtualedit.Utils;
+package ca.encodeous.virtualedit.utils;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
-
-import java.util.ArrayList;
 
 public class PacketUtils {
     public static void setChunkModified(Vector location, PacketContainer pc) { //Takes a *real world coordinate*.

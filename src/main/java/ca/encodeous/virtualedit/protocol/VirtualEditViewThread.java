@@ -1,21 +1,11 @@
-package ca.encodeous.virtualedit.Protocol;
+package ca.encodeous.virtualedit.protocol;
 
-import ca.encodeous.virtualedit.Constants;
-import ca.encodeous.virtualedit.Utils.MCVersion;
-import ca.encodeous.virtualedit.Utils.MaterialUtils;
+import ca.encodeous.virtualedit.utils.MCVersion;
 import ca.encodeous.virtualedit.VirtualWorld;
-import ca.encodeous.virtualedit.World.VirtualWorldView;
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.netty.WirePacket;
-import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.util.Vector;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class VirtualEditViewThread extends Thread{

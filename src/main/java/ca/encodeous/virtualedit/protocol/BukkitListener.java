@@ -1,4 +1,4 @@
-package ca.encodeous.virtualedit.Protocol;
+package ca.encodeous.virtualedit.protocol;
 
 import ca.encodeous.virtualedit.VirtualWorld;
 import org.bukkit.event.EventHandler;

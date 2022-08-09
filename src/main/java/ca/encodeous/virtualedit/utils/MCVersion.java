@@ -1,4 +1,4 @@
-package ca.encodeous.virtualedit.Utils;
+package ca.encodeous.virtualedit.utils;
 
 import org.bukkit.Bukkit;
 
