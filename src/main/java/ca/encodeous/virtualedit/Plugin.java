@@ -57,7 +57,7 @@ public final class Plugin extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        // Plugin startup logic
         try {
             VirtualWorld.Instance.close();
         } catch (IOException e) {
