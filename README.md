@@ -34,18 +34,18 @@ Just to reiterate. `VirtualEdit` is a *library* designed for **developers**. It 
 
 ```xml
 <repositories>
-	<repository>
-	    <id>jitpack.io</id>
-	    <url>https://jitpack.io</url>
-	</repository>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
 </repositories>
 ```
 
 #### Add VirtualEdit as a dependency
 ```xml
 <dependency>
-    <groupId>com.github.encodeous</groupId>
-    <artifactId>VirtualEdit</artifactId>
-    <version>master-SNAPSHOT</version>
+  <groupId>com.github.encodeous</groupId>
+  <artifactId>VirtualEdit</artifactId>
+  <version>master-SNAPSHOT</version>
 </dependency>
 ```
