@@ -53,6 +53,7 @@ public class VirtualWorld {
             return views.get(world);
         }
         var instance = new VirtualWorld();
+        instance.world = world;
         views.put(world, instance);
         return instance;
     }
