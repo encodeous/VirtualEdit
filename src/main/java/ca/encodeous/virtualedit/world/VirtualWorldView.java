@@ -81,7 +81,6 @@ public class VirtualWorldView {
         layer.subscribe(notifier);
         layers.push(layer);
         markWorldForChange();
-        refreshWorldView();
     }
     public VirtualWorldLayer peekLayer(){
         return layers.peekFirst();
@@ -89,8 +88,7 @@ public class VirtualWorldView {
     public VirtualWorldLayer popLayer(){
         var layer = layers.pop();
         layer.unsubscribe(notifier);
-        markWorldForChange();
-        refreshWorldView();
+        markWorldForChange();;
         return layer;
     }
     public void close(){
