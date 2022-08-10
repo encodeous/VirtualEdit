@@ -31,6 +31,7 @@ public class VirtualWorld {
             views = new ConcurrentHashMap<>();
             chunkListener = new ProtocolListener(plugin);
             Bukkit.getPluginManager().registerEvents(new BukkitListener(), plugin);
+            PlayerUpdateQueue = new ViewQueue();
             Protocol = ProtocolLibrary.getProtocolManager();
             threads = new VirtualEditViewThread[Constants.VIEW_UPDATE_THREADS];
             for (int i = 0; i < Constants.VIEW_UPDATE_THREADS; i++) {
@@ -39,7 +40,6 @@ public class VirtualWorld {
                 thread.start();
                 threads[i] = thread;
             }
-            PlayerUpdateQueue = new ViewQueue();
         }
         else {
             throw new RuntimeException("VirtualEdit has already been initialized");

@@ -6,3 +6,4 @@ before_install:
   - mvn paper-nms:init
 install:
   - mvn install -DskipTests
+  - mvn dependency:purge-local-repository -DmanualInclude="com.github.encodeous.VirtualEdit:paper-nms"
