@@ -61,6 +61,7 @@
                     <execution>
                         <phase>process-classes</phase>
                         <goals>
+                            <goal>init</goal>
                             <goal>remap</goal>
                         </goals>
                     </execution>
