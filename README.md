@@ -20,7 +20,13 @@
 
 ## `Usage`
 
-Just to reiterate. `VirtualEdit` is a *library* designed for **developers**. It is not a plugin that can be installed and used on a server. Other developers are free to create plugins that use VirtualEdit for their own use-cases, like the ones mentioned above.
+Just to reiterate. `VirtualEdit` is a *library* designed for **developers**. It is not a plugin that can be used independently on a server. Other developers are free to create plugins that use VirtualEdit for their own use-cases, like the ones mentioned above.
+
+## `Dependencies`
+
+`VirtualEdit` depends on the following:
+- Paper (Bukkit and Spigot are not supported)
+- ProtocolLib
 
 ### `Maven`
 

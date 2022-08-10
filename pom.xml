@@ -6,10 +6,10 @@
 
     <groupId>ca.encodeous</groupId>
     <artifactId>VirtualEdit</artifactId>
-    <version>SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Plugin</name>
+    <name>VirtualEdit</name>
 
     <description>Packet-based world editing</description>
     <properties>
@@ -44,11 +44,11 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <finalName>${project.artifactId}-${project.version}</finalName>
-                            <outputDirectory>ignored\build</outputDirectory>
-                            <shadedClassifierName>shaded</shadedClassifierName>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
+<!--                            <createDependencyReducedPom>false</createDependencyReducedPom>-->
+<!--                            <finalName>${project.artifactId}-${project.version}</finalName>-->
+<!--                            <outputDirectory>ignored\build</outputDirectory>-->
+<!--                            <shadedClassifierName>shaded</shadedClassifierName>-->
+<!--                            <shadedArtifactAttached>true</shadedArtifactAttached>-->
                         </configuration>
                     </execution>
                 </executions>
@@ -104,24 +104,6 @@
             <artifactId>ProtocolLib</artifactId>
             <version>4.8.0</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>RELEASE</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>RELEASE</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>RELEASE</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
