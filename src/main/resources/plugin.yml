@@ -4,4 +4,4 @@ main: ca.encodeous.virtualedit.Plugin
 api-version: 1.13
 depend: [ ProtocolLib ]
 authors: [ Encodeous ]
-description: Packet based world editing
+description: Fast client-side world editing library

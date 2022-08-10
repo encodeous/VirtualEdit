@@ -11,7 +11,7 @@
 
     <name>VirtualEdit</name>
 
-    <description>Packet-based world editing</description>
+    <description>Fast client-side world editing library</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
