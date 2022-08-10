@@ -59,13 +59,6 @@
                 <version>1.2.1</version>
                 <executions>
                     <execution>
-                        <id>setup-nms</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>init</goal>
-                        </goals>
-                    </execution>
-                    <execution>
                         <id>remap-classes</id>
                         <phase>process-classes</phase>
                         <goals>
