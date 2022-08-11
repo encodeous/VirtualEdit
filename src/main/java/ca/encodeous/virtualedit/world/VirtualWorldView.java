@@ -235,16 +235,16 @@ public class VirtualWorldView {
                 byte[] cb;
                 if(!hasData){
                     hdMask.set(sec, true);
-                    ieMask.set(sec, false);
                     cb = new byte[2048];
                 }else{
                     cb = su.get(idx++);
                 }
+                ieMask.set(sec, false);
                 blList.add(cb);
                 for(int i = 0; i < 16; i++){
                     for(int j = 0; j < 16; j++){
                         for(int k = 0; k < 16; k++){
-                            if(chunk[sec - 1][i][j][k] || !hasData){
+                            if(chunk[sec - 1][i][j][k]){
                                 set(i, j, k, 15, cb);
                             }
                         }
@@ -304,18 +304,16 @@ public class VirtualWorldView {
             for(int i = 0; i < 16; i++){
                 for(int j = 0; j < 16; j++){
                     for(int k = 0; k < 16; k++){
-                        if(!arr[section].states.get(i, j, j).isOpaque()){
-                            relightBlocks[section][i][j][k] =
-                                    isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k, sections[section]) ||
-                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i+1, j, k, sections[section]) ||
-                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j+1, k, sections[section]) ||
-                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k+1, sections[section]) ||
-                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i-1, j, k, sections[section]) ||
-                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j-1, k, sections[section]) ||
-                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k-1, sections[section])
-                            ;
-                            hasAppliedLightUpdates = true;
-                        }
+                        relightBlocks[section][i][j][k] =
+                                isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k, sections[section]) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i+1, j, k, sections[section]) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j+1, k, sections[section]) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k+1, sections[section]) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i-1, j, k, sections[section]) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j-1, k, sections[section]) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k-1, sections[section])
+                        ;
+                        hasAppliedLightUpdates |= relightBlocks[section][i][j][k];
                     }
                 }
             }
