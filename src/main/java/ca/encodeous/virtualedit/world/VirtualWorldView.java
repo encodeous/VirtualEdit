@@ -10,6 +10,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.server.MCUtil;
 import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -41,7 +42,8 @@ public class VirtualWorldView {
     public final World world;
     private final Player player;
     private int updateId = 0;
-    public VirtualWorldView(Player p, World world){
+
+    public VirtualWorldView(Player p, World world) {
         layers = new ArrayDeque<>();
         player = p;
         this.world = world;
@@ -59,67 +61,86 @@ public class VirtualWorldView {
         };
         queuedChunkUpdates = new ConcurrentHashMap<>();
     }
-    public void markWorldForChange(){
+
+    public void markWorldForChange() {
         markFor(0, Constants.MAX_WORLD_SIZE, 0, Constants.MAX_WORLD_SIZE, Constants.UPDATE);
     }
+
     public void markFor(int x1, int x2, int z1, int z2, int value) {
-        synchronized (updates){
+        synchronized (updates) {
             updates.update(value, convertToSafeVal(x1), convertToSafeVal(x2), convertToSafeVal(z1), convertToSafeVal(z2), updateId++);
         }
     }
+
     public void markForChunk(int x1, int x2, int z1, int z2, int value) {
-        synchronized (updates){
+        synchronized (updates) {
             updates.update(value, convertToSafeValChunk(x1), convertToSafeValChunk(x2), convertToSafeValChunk(z1), convertToSafeValChunk(z2), updateId++);
         }
     }
-    public int getChunkMark(int x, int y){
-        synchronized (updates){
+
+    public int getChunkMark(int x, int y) {
+        synchronized (updates) {
             return DataUtils.tGb(updates.query(x + Constants.MAX_CHUNKS_AXIS / 2, y + Constants.MAX_CHUNKS_AXIS / 2));
         }
     }
-    public void pushLayer(VirtualWorldLayer layer){
+
+    public void pushLayer(VirtualWorldLayer layer) {
         layer.subscribe(notifier);
         layers.push(layer);
         markWorldForChange();
     }
-    public VirtualWorldLayer peekLayer(){
+
+    public VirtualWorldLayer peekLayer() {
         return layers.peekFirst();
     }
-    public VirtualWorldLayer popLayer(){
+
+    public VirtualWorldLayer popLayer() {
         var layer = layers.pop();
         layer.unsubscribe(notifier);
-        markWorldForChange();;
+        markWorldForChange();
+        ;
         return layer;
     }
-    public void close(){
-        for(VirtualWorldLayer layer : layers){
+
+    public void close() {
+        for (VirtualWorldLayer layer : layers) {
             layer.unsubscribe(notifier);
         }
         layers.clear();
     }
 
-    public void refreshWorldView(){
+    public void refreshWorldView() {
         VirtualWorld.PlayerUpdateQueue.offerAndLock(player);
     }
 
-    public BlockState renderAt(Vector loc){
-        for(VirtualWorldLayer layer : layers){
+    public BlockState renderAt(Vector loc) {
+        for (VirtualWorldLayer layer : layers) {
             BlockState block = layer.getBlock(loc.getBlockX() - layer.xOffset, loc.getBlockY() - layer.yOffset, loc.getBlockZ() - layer.zOffset);
-            if(block != null){
+            if (block != null) {
                 return block;
             }
         }
         return null;
     }
 
-    public BlockState renderAt(int x, int y, int z, ResourceCache cache){
-        for(VirtualWorldLayer layer : layers){
+    public BlockState renderAt(int x, int y, int z, ResourceCache cache) {
+        for (VirtualWorldLayer layer : layers) {
             var block = layer.getBlock(x - layer.xOffset, y - layer.yOffset, z - layer.zOffset, cache);
-            if(block != null){
+            if (block != null) {
                 return block;
             }
         }
         return null;
+    }
+
+    public boolean isVirtual(int x, int y, int z) {
+        for (VirtualWorldLayer layer : layers) {
+            var block = layer.getNode(x - layer.xOffset, y - layer.yOffset, z - layer.zOffset);
+            if (block != Constants.DS_NULL_VALUE) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected static boolean triangleIntersects(double p1x, double p1z, double p2x, double p2z, double p3x, double p3z, double targetX, double targetZ) {
@@ -138,9 +159,9 @@ public class VirtualWorldView {
         }
     }
 
-    public void sendChunksInRange(){
+    public void sendChunksInRange() {
         var sp = ((CraftPlayer) player).getHandle();
-        ChunkMap chunkMap = (((CraftWorld)world).getHandle().getLevel().getChunkSource()).chunkMap;
+        ChunkMap chunkMap = (((CraftWorld) world).getHandle().getLevel().getChunkSource()).chunkMap;
         PlayerChunkLoader.PlayerLoaderData data = chunkMap.playerChunkManager.getData(sp);
         boolean useLookPriority = GlobalConfiguration.get().chunkLoading.enableFrustumPriority && (sp.getDeltaMovement().horizontalDistanceSqr() > 0.25 || sp.getAbilities().flying);
         int sendViewDistance = data.getTargetSendViewDistance();
@@ -150,18 +171,18 @@ public class VirtualWorldView {
         double p1x = sp.getX();
         double p1z = sp.getZ();
         float yaw = MCUtil.normalizeYaw(sp.yRot + 90.0F);
-        double p2x = 192.0 * Math.cos(Math.toRadians((double)yaw + 55.0)) + p1x;
-        double p2z = 192.0 * Math.sin(Math.toRadians((double)yaw + 55.0)) + p1z;
-        double p3x = 192.0 * Math.cos(Math.toRadians((double)yaw - 55.0)) + p1x;
-        double p3z = 192.0 * Math.sin(Math.toRadians((double)yaw - 55.0)) + p1z;
+        double p2x = 192.0 * Math.cos(Math.toRadians((double) yaw + 55.0)) + p1x;
+        double p2z = 192.0 * Math.sin(Math.toRadians((double) yaw + 55.0)) + p1z;
+        double p3x = 192.0 * Math.cos(Math.toRadians((double) yaw - 55.0)) + p1x;
+        double p3z = 192.0 * Math.sin(Math.toRadians((double) yaw - 55.0)) + p1z;
         ArrayList<Pair<Double, ChunkPos>> sendChunks = new ArrayList<>();
-        for(int dx = -distance; dx <= distance; ++dx) {
-            for(int dz = -distance; dz <= distance; ++dz) {
+        for (int dx = -distance; dx <= distance; ++dx) {
+            for (int dz = -distance; dz <= distance; ++dz) {
                 int chunkX = dx + centerChunkX;
                 int chunkZ = dz + centerChunkZ;
                 int squareDistance = Math.max(Math.abs(dx), Math.abs(dz));
                 boolean sendChunk = squareDistance <= sendViewDistance && getChunkMark(chunkX, chunkZ) == Constants.UPDATE;
-                if(sendChunk){
+                if (sendChunk) {
                     boolean prioritised = useLookPriority && triangleIntersects(p1x, p1z, p2x, p2z, p3x, p3z, chunkX << 4 | 8, chunkZ << 4 | 8);
                     int manhattanDistance = Math.abs(dx) + Math.abs(dz);
                     double priority;
@@ -178,12 +199,13 @@ public class VirtualWorldView {
         }
         markForChunk(centerChunkX - distance, centerChunkX + distance, centerChunkZ - distance, centerChunkZ + distance, Constants.NO_UPDATE);
         sendChunks.sort(Comparator.comparingDouble(Pair::getA));
-        for(var chunk : sendChunks){
+        for (var chunk : sendChunks) {
             queuedChunkUpdates.put(chunk.getB(), new Object());
             sendUpdatedChunk(chunk.getB().x, chunk.getB().z);
         }
     }
-    public void sendUpdatedChunk(int x, int z){
+
+    public void sendUpdatedChunk(int x, int z) {
         var sp = ((CraftPlayer) player).getHandle();
         if (!player.isOnline()) {
             return;
@@ -191,38 +213,128 @@ public class VirtualWorldView {
         sp.connection.send(renderPacketForChunk(x, z));
     }
 
-    public ClientboundLevelChunkWithLightPacket renderPacketForChunk(int x, int z){
-        var cWorld = (CraftWorld)world;
+    public ClientboundLevelChunkWithLightPacket renderPacketForChunk(int x, int z) {
+        var cWorld = (CraftWorld) world;
         var sWorld = cWorld.getHandle();
         var processed = renderChunk(x, z);
-        return new ClientboundLevelChunkWithLightPacket(processed, sWorld.getLightEngine(), null, null, true, false);
-    }
-
-    public LevelChunk renderChunk(int x, int z){
-        var level = ((CraftWorld)world).getHandle();
-        var chunk = level.getChunk(x, z);
-        return new LevelChunk(chunk.level, chunk.getPos(), chunk.getUpgradeData(), new LevelChunkTicks<>(), new LevelChunkTicks<>(),
-                chunk.getInhabitedTime(), renderSections(chunk, level), levelChunk -> {}, chunk.getBlendingData());
-    }
-
-    private LevelChunkSection[] renderSections(LevelChunk chunk, Level world){
-        var sec = chunk.getSections();
-        LevelChunkSection[] arr = new LevelChunkSection[world.getSectionsCount()];
-        assert world.getSectionsCount() == sec.length;
-        var cache = new ResourceCache();
-        for(int i = 0; i < sec.length; i++){
-            var section = readSection(chunk.getPos(), i, world.getMinBuildHeight(), cache);
-            if(isTransformRequired(section)){
-                var x = sec[i];
-                arr[i] = applySectionTransformations(x, section);
+//        var vLightEngine = new VirtualLightEngine(processed.getB(), sWorld, (ThreadedLevelLightEngine) sWorld.getLightEngine(), processed.getA());
+        var packet = new ClientboundLevelChunkWithLightPacket(processed.getA(), sWorld.getLightEngine(), null, null, true, false);
+        var light = packet.getLightData();
+        // reprocess lighting
+        var hdMask = light.getSkyYMask();
+        var ieMask = light.getEmptySkyYMask();
+        var su = light.getSkyUpdates();
+        var blList = new ArrayList<byte[]>();
+        int idx = 0;
+        var chunk = processed.getB();
+        for (int sec = 0; sec <= chunk.length; sec++) {
+            boolean isInWorld = sec != 0 && sec != chunk.length;
+            boolean hasData = hdMask.get(sec);
+            if(isInWorld && chunk[sec - 1] != null){
+                // section is modified
+                byte[] cb;
+                if(!hasData){
+                    hdMask.set(sec, true);
+                    ieMask.set(sec, false);
+                    cb = new byte[2048];
+                }else{
+                    cb = su.get(idx++);
+                }
+                blList.add(cb);
+                for(int i = 0; i < 16; i++){
+                    for(int j = 0; j < 16; j++){
+                        for(int k = 0; k < 16; k++){
+                            if(chunk[sec - 1][i][j][k] || !hasData){
+                                set(i, j, k, 15, cb);
+                            }
+                        }
+                    }
+                }
             }else{
-                arr[i] = sec[i];
+                if(hasData){
+                    blList.add(su.get(idx++));
+                }
             }
         }
-        return arr;
+        su.clear();
+        su.addAll(blList);
+        return packet;
     }
-    public BlockState[][][] readSection(ChunkPos pos, int secId, int mh, ResourceCache cache){
-        var cached = new BlockState[16][16][16];
+
+    void set(int x, int y, int z, int value, byte[] arr) {
+        set(x & 0xF | (z & 0xF) << 4 | (y & 0xF) << 8, value, arr);
+    }
+
+
+    public void set(int index, int value, byte[] arr) {
+        int shift = (index & 0x1) << 2;
+        int i = index >>> 1;
+
+        arr[i] = (byte) (arr[i] & 240 >>> shift | value << shift);
+    }
+
+    Pair<LevelChunk, boolean[][][][]> renderChunk(int x, int z) {
+        var level = ((CraftWorld) world).getHandle();
+        var chunk = level.getChunk(x, z);
+        var rendered = renderSections(chunk, level);
+        var lChunk = new LevelChunk(chunk.level, chunk.getPos(), chunk.getUpgradeData(), new LevelChunkTicks<>(), new LevelChunkTicks<>(),
+                chunk.getInhabitedTime(), rendered.getA(), levelChunk -> {
+        }, chunk.getBlendingData());
+        return new Pair<>(lChunk, rendered.getB());
+    }
+
+    private Pair<LevelChunkSection[], boolean[][][][]> renderSections(LevelChunk chunk, Level world) {
+        var sec = chunk.getSections();
+        LevelChunkSection[] arr = new LevelChunkSection[world.getSectionsCount()];
+        BlockState[][][][] sections = new BlockState[sec.length][16][16][16];
+        boolean[][][][] relightBlocks = new boolean[sec.length][16][16][16];
+        assert world.getSectionsCount() == sec.length;
+        var cache = new ResourceCache();
+        for (int section = 0; section < sec.length; section++) {
+            readSection(chunk.getPos(), section, world.getMinBuildHeight(), cache, sections[section]);
+            if (isTransformRequired(sections[section])) {
+                var x = sec[section];
+                arr[section] = applySectionTransformations(x, sections[section]);
+
+            } else {
+                arr[section] = sec[section];
+                sections[section] = null;
+            }
+            boolean hasAppliedLightUpdates = false;
+            for(int i = 0; i < 16; i++){
+                for(int j = 0; j < 16; j++){
+                    for(int k = 0; k < 16; k++){
+                        if(!arr[section].states.get(i, j, j).isOpaque()){
+                            relightBlocks[section][i][j][k] =
+                                    isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k, sections[section]) ||
+                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i+1, j, k, sections[section]) ||
+                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j+1, k, sections[section]) ||
+                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k+1, sections[section]) ||
+                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i-1, j, k, sections[section]) ||
+                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j-1, k, sections[section]) ||
+                                            isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k-1, sections[section])
+                            ;
+                            hasAppliedLightUpdates = true;
+                        }
+                    }
+                }
+            }
+            if(!hasAppliedLightUpdates){
+                // skip sending this packet
+                relightBlocks[section] = null;
+            }
+        }
+        return new Pair<>(arr, relightBlocks);
+    }
+
+    private boolean isVirtualBlock(ChunkPos pos, int minH, int sec, int x, int y, int z, BlockState[][][] section){
+        if(x < 0 || y < 0 || z < 0 || x > 15 || y > 15 || z > 15){
+            return isVirtual(x + (pos.x << 4), minH + (sec << 4) + y, z + (pos.z << 4));
+        }
+        return section != null && section[x][y][z] != null;
+    }
+
+    void readSection(ChunkPos pos, int secId, int mh, ResourceCache cache, BlockState[][][] cached) {
         var chunkX = pos.x;
         var chunkZ = pos.z;
         int mx = chunkX << 4, my = mh + (secId << 4), mz = chunkZ << 4;
@@ -233,9 +345,9 @@ public class VirtualWorldView {
                 }
             }
         }
-        return cached;
     }
-    public boolean isTransformRequired(BlockState[][][] view){
+
+    boolean isTransformRequired(BlockState[][][] view) {
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
@@ -249,7 +361,7 @@ public class VirtualWorldView {
         return false;
     }
 
-    public LevelChunkSection applySectionTransformations(LevelChunkSection section, BlockState[][][] view) {
+    LevelChunkSection applySectionTransformations(LevelChunkSection section, BlockState[][][] view) {
         boolean isSingleValuePalette = true;
         BlockState svpv = null;
         svpCheck:
@@ -257,11 +369,11 @@ public class VirtualWorldView {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
                     var state = view[i][j][k];
-                    if(i == j && j == k && k == 0){
+                    if (i == j && j == k && k == 0) {
                         svpv = state;
-                    }else if(!Objects.equals(svpv, state)){
+                    } else if (!Objects.equals(svpv, state)) {
                         isSingleValuePalette = false;
-                        if(state != null){
+                        if (state != null) {
                             svpv = state;
                             break svpCheck;
                         }
@@ -270,10 +382,12 @@ public class VirtualWorldView {
             }
         }
         var pc = new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY, svpv, PalettedContainer.Strategy.SECTION_STATES);
-        if(isSingleValuePalette){
-            return new LevelChunkSection(section.bottomBlockY() >> 4, pc, (PalettedContainer<Holder<Biome>>) section.getBiomes());
+        if (isSingleValuePalette) {
+            var svp = new LevelChunkSection(section.bottomBlockY() >> 4, pc, (PalettedContainer<Holder<Biome>>) section.getBiomes());
+            svp.recalcBlockCounts();
+            return svp;
         }
-        var biomes = (PalettedContainer<Holder<Biome>>)section.getBiomes();
+        var biomes = (PalettedContainer<Holder<Biome>>) section.getBiomes();
         var newState = new LevelChunkSection(section.bottomBlockY() >> 4, pc, biomes.copy());
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
@@ -281,7 +395,7 @@ public class VirtualWorldView {
                     var state = view[i][j][k];
                     if (state != null) {
                         newState.states.getAndSetUnchecked(i, j, k, state);
-                    }else{
+                    } else {
                         newState.states.getAndSetUnchecked(i, j, k, section.states.get(i, j, k));
                     }
                 }
