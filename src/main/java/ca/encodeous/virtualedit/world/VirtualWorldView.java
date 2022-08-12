@@ -16,6 +16,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -282,10 +283,14 @@ public class VirtualWorldView {
         var rendered = renderSections(chunk, level);
         var lChunk = new LevelChunk(chunk.level, chunk.getPos(), chunk.getUpgradeData(), new LevelChunkTicks<>(), new LevelChunkTicks<>(),
                 chunk.getInhabitedTime(), rendered.getA(), levelChunk -> {
-            for(var v : chunk.getBlockEntities().values()){
-                levelChunk.setBlockEntity(v);
-            }
         }, chunk.getBlendingData());
+        for(var v : chunk.getBlockEntities().values()){
+            if(lChunk.getBlockState(v.getBlockPos()).is(chunk.getBlockState(v.getBlockPos()).getBlock())){
+                var meta = v.saveWithFullMetadata();
+                lChunk.setBlockEntity(BlockEntity.loadStatic(v.getBlockPos(),
+                        lChunk.getBlockState(v.getBlockPos()), meta));
+            }
+        }
         return new Pair<>(lChunk, rendered.getB());
     }
 
