@@ -40,7 +40,7 @@ public class VirtualWorldView {
     private int curLayer;
     private final IntervalTree2D updates;
     public final ConcurrentHashMap<ChunkPos, Object> queuedChunkUpdates;
-    private final VirtualWorldChangeNotifier notifier;
+    public final VirtualWorldChangeNotifier notifier;
     public final World world;
     private final Player player;
     private int updateId = 0;
@@ -100,7 +100,7 @@ public class VirtualWorldView {
     }
 
     public VirtualWorldLayer popLayer() {
-        var layer = layers[curLayer--];
+        var layer = layers[--curLayer];
         layer.unsubscribe(notifier);
         markWorldForChange();
         return layer;
@@ -109,6 +109,7 @@ public class VirtualWorldView {
     public void close() {
         for(int i = 0; i < curLayer; i++){
             var layer = layers[i];
+            if(layer == null) continue;
             layer.unsubscribe(notifier);
         }
     }
