@@ -36,7 +36,8 @@ import static ca.encodeous.virtualedit.utils.DataUtils.convertToSafeVal;
 import static ca.encodeous.virtualedit.utils.DataUtils.convertToSafeValChunk;
 
 public class VirtualWorldView {
-    public final ArrayDeque<VirtualWorldLayer> layers;
+    public final VirtualWorldLayer[] layers;
+    private int curLayer;
     private final IntervalTree2D updates;
     public final ConcurrentHashMap<ChunkPos, Object> queuedChunkUpdates;
     private final VirtualWorldChangeNotifier notifier;
@@ -44,8 +45,8 @@ public class VirtualWorldView {
     private final Player player;
     private int updateId = 0;
 
-    public VirtualWorldView(Player p, World world) {
-        layers = new ArrayDeque<>();
+    public VirtualWorldView(Player p, World world, int maxLayers) {
+        layers = new VirtualWorldLayer[maxLayers];
         player = p;
         this.world = world;
         updates = new IntervalTree2D(0, Constants.MAX_CHUNKS_AXIS, 0, Constants.MAX_CHUNKS_AXIS);
@@ -61,6 +62,9 @@ public class VirtualWorldView {
             }
         };
         queuedChunkUpdates = new ConcurrentHashMap<>();
+    }
+    public VirtualWorldView(Player p, World world) {
+        this(p, world, 128);
     }
 
     public void markWorldForChange() {
@@ -87,27 +91,26 @@ public class VirtualWorldView {
 
     public void pushLayer(VirtualWorldLayer layer) {
         layer.subscribe(notifier);
-        layers.push(layer);
+        layers[curLayer++] = layer;
         markWorldForChange();
     }
 
     public VirtualWorldLayer peekLayer() {
-        return layers.peekFirst();
+        return curLayer == 0 ? null : layers[curLayer - 1];
     }
 
     public VirtualWorldLayer popLayer() {
-        var layer = layers.pop();
+        var layer = layers[curLayer--];
         layer.unsubscribe(notifier);
         markWorldForChange();
-        ;
         return layer;
     }
 
     public void close() {
-        for (VirtualWorldLayer layer : layers) {
+        for(int i = 0; i < curLayer; i++){
+            var layer = layers[i];
             layer.unsubscribe(notifier);
         }
-        layers.clear();
     }
 
     public void refreshWorldView() {
@@ -118,7 +121,8 @@ public class VirtualWorldView {
     }
 
     public BlockState renderAt(Vector loc) {
-        for (VirtualWorldLayer layer : layers) {
+        for(int i = 0; i < curLayer; i++){
+            var layer = layers[i];
             BlockState block = layer.getBlock(loc.getBlockX() - layer.xOffset, loc.getBlockY() - layer.yOffset, loc.getBlockZ() - layer.zOffset);
             if (block != null) {
                 return block;
@@ -128,7 +132,8 @@ public class VirtualWorldView {
     }
 
     public BlockState renderAt(int x, int y, int z, ResourceCache cache) {
-        for (VirtualWorldLayer layer : layers) {
+        for(int i = 0; i < curLayer; i++){
+            var layer = layers[i];
             var block = layer.getBlock(x - layer.xOffset, y - layer.yOffset, z - layer.zOffset, cache);
             if (block != null) {
                 return block;
@@ -138,7 +143,8 @@ public class VirtualWorldView {
     }
 
     public boolean isVirtual(int x, int y, int z) {
-        for (VirtualWorldLayer layer : layers) {
+        for(int i = 0; i < curLayer; i++){
+            var layer = layers[i];
             var block = layer.getNode(x - layer.xOffset, y - layer.yOffset, z - layer.zOffset);
             if (block != Constants.DS_NULL_VALUE) {
                 return true;
@@ -230,11 +236,13 @@ public class VirtualWorldView {
         var su = light.getSkyUpdates();
         var blList = new ArrayList<byte[]>();
         int idx = 0;
-        var chunk = processed.getB();
-        for (int sec = 0; sec <= chunk.length; sec++) {
-            boolean isInWorld = sec != 0 && sec != chunk.length;
+        var chunkMask = processed.getB();
+        var chunk = renderMask.get();
+        var totalSections = processed.getA().getSectionsCount();
+        for (int sec = 0; sec <= totalSections; sec++) {
+            boolean isInWorld = sec != 0 && sec != totalSections;
             boolean hasData = hdMask.get(sec);
-            if(isInWorld && chunk[sec - 1] != null){
+            if(isInWorld && chunkMask.get(sec - 1)){
                 // section is modified
                 byte[] cb;
                 if(!hasData){
@@ -277,7 +285,10 @@ public class VirtualWorldView {
         arr[i] = (byte) (arr[i] & 240 >>> shift | value << shift);
     }
 
-    Pair<LevelChunk, boolean[][][][]> renderChunk(int x, int z) {
+    private ThreadLocal<boolean[][][][]> renderMask = ThreadLocal.withInitial(() -> new boolean[24][16][16][16]);
+    private ThreadLocal<BlockState[][][][]> sectionData = ThreadLocal.withInitial(() -> new BlockState[24][16][16][16]);
+
+    Pair<LevelChunk, BitSet> renderChunk(int x, int z) {
         var level = ((CraftWorld) world).getHandle();
         var chunk = level.getChunk(x, z);
         var rendered = renderSections(chunk, level);
@@ -294,54 +305,62 @@ public class VirtualWorldView {
         return new Pair<>(lChunk, rendered.getB());
     }
 
-    private Pair<LevelChunkSection[], boolean[][][][]> renderSections(LevelChunk chunk, Level world) {
+    private Pair<LevelChunkSection[], BitSet> renderSections(LevelChunk chunk, Level world) {
         var sec = chunk.getSections();
         LevelChunkSection[] arr = new LevelChunkSection[world.getSectionsCount()];
-        BlockState[][][][] sections = new BlockState[sec.length][16][16][16];
-        boolean[][][][] relightBlocks = new boolean[sec.length][16][16][16];
+        BlockState[][][][] sections = sectionData.get();
+        boolean[][][][] relightBlocks = renderMask.get();
         assert world.getSectionsCount() == sec.length;
         var cache = new ResourceCache();
+        var transformedSections = new BitSet();
         for (int section = 0; section < sec.length; section++) {
             readSection(chunk.getPos(), section, world.getMinBuildHeight(), cache, sections[section]);
+            boolean isSectionTransformed = false;
             if (isTransformRequired(sections[section])) {
                 var x = sec[section];
                 arr[section] = applySectionTransformations(x, sections[section]);
-
+                isSectionTransformed = true;
             } else {
                 arr[section] = sec[section];
-                sections[section] = null;
             }
             boolean hasAppliedLightUpdates = false;
             for(int i = 0; i < 16; i++){
                 for(int j = 0; j < 16; j++){
                     for(int k = 0; k < 16; k++){
                         relightBlocks[section][i][j][k] =
-                                isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k, sections[section]) ||
-                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i+1, j, k, sections[section]) ||
-                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j+1, k, sections[section]) ||
-                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k+1, sections[section]) ||
-                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i-1, j, k, sections[section]) ||
-                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j-1, k, sections[section]) ||
-                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k-1, sections[section])
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k, sections[section], isSectionTransformed) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i+1, j, k, sections[section], isSectionTransformed) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j+1, k, sections[section], isSectionTransformed) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k+1, sections[section], isSectionTransformed) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i-1, j, k, sections[section], isSectionTransformed) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j-1, k, sections[section], isSectionTransformed) ||
+                                        isVirtualBlock(chunk.getPos(), world.getMinBuildHeight(), section, i, j, k-1, sections[section], isSectionTransformed)
                         ;
                         hasAppliedLightUpdates |= relightBlocks[section][i][j][k];
                     }
                 }
             }
-            if(!hasAppliedLightUpdates){
-                // skip sending this packet
-                relightBlocks[section] = null;
+            if(hasAppliedLightUpdates){
+                // mark this section to be sent
+                transformedSections.set(section, true);
             }
         }
-        return new Pair<>(arr, relightBlocks);
+        return new Pair<>(arr, transformedSections);
     }
-
-    private boolean isVirtualBlock(ChunkPos pos, int minH, int sec, int x, int y, int z, BlockState[][][] section){
-        if(x < 0 || y < 0 || z < 0 || x > 15 || y > 15 || z > 15){
+    private static final int mask = ~0b1111;
+    private boolean isVirtualBlock(ChunkPos pos, int minH, int sec, int x, int y, int z, BlockState[][][] section, boolean transformed){
+        // check if queried block is within the cached section
+        if(((x & mask) | (y & mask) | (z & mask)) != 0){
             return isVirtual(x + (pos.x << 4), minH + (sec << 4) + y, z + (pos.z << 4));
         }
-        return section != null && section[x][y][z] != null;
+        return transformed && section[x][y][z] != null;
     }
+//    private boolean isVirtualBlock(ChunkPos pos, int minH, int sec, int x, int y, int z, BlockState[][][] section, boolean transformed){
+//        if(x < 0 || y < 0 || z < 0 || x > 15 || y > 15 || z > 15){
+//            return isVirtual(x + (pos.x << 4), minH + (sec << 4) + y, z + (pos.z << 4));
+//        }
+//        return transformed && section[x][y][z] != null;
+//    }
 
     void readSection(ChunkPos pos, int secId, int mh, ResourceCache cache, BlockState[][][] cached) {
         var chunkX = pos.x;
