@@ -282,6 +282,9 @@ public class VirtualWorldView {
         var rendered = renderSections(chunk, level);
         var lChunk = new LevelChunk(chunk.level, chunk.getPos(), chunk.getUpgradeData(), new LevelChunkTicks<>(), new LevelChunkTicks<>(),
                 chunk.getInhabitedTime(), rendered.getA(), levelChunk -> {
+            for(var v : chunk.getBlockEntities().values()){
+                levelChunk.setBlockEntity(v);
+            }
         }, chunk.getBlendingData());
         return new Pair<>(lChunk, rendered.getB());
     }
