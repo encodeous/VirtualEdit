@@ -110,7 +110,10 @@ public class VirtualWorldView {
     }
 
     public void refreshWorldView() {
-        VirtualWorld.PlayerUpdateQueue.offerAndLock(player);
+        VirtualWorld.PlayerUpdateQueue.offerAndLock(new Pair<>(player, null));
+    }
+    public void refreshWorldView(Runnable whenFinished) {
+        VirtualWorld.PlayerUpdateQueue.offerAndLock(new Pair<>(player, whenFinished));
     }
 
     public BlockState renderAt(Vector loc) {

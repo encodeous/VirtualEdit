@@ -15,7 +15,8 @@ public class VirtualEditViewThread extends Thread{
     public void run() {
         while (this.running.get()) {
             try {
-                Player player = VirtualWorld.PlayerUpdateQueue.poll();
+                var action = VirtualWorld.PlayerUpdateQueue.poll();
+                var player = action.getA();
                 try {
                     if (player == null || !player.isOnline()) {
                         continue;
@@ -27,7 +28,10 @@ public class VirtualEditViewThread extends Thread{
                         view.sendChunksInRange();
                     }
                 } finally {
-                    VirtualWorld.PlayerUpdateQueue.unlock(player);
+                    VirtualWorld.PlayerUpdateQueue.unlock(action);
+                    if(action.getB() != null){
+                        action.getB().run();
+                    }
                 }
             } catch (InterruptedException e) {
                 break;
