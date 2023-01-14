@@ -1,7 +1,6 @@
 package ca.encodeous.virtualedit.data;
 
 import org.bukkit.entity.Player;
-import oshi.util.tuples.Pair;
 
 import java.util.HashSet;
 import java.util.LinkedList;

@@ -3,12 +3,7 @@ package ca.encodeous.virtualedit.data.nodestorage;
 import net.minecraft.world.level.block.Block;
 import org.bukkit.Material;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockState;
-import org.bukkit.craftbukkit.v1_19_R1.block.CraftBlockStates;
-import org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_19_R1.util.CraftMagicNumbers;
-
-import java.util.Objects;
+import org.bukkit.craftbukkit.v1_19_R2.util.CraftMagicNumbers;
 
 public class BlockNode implements NodeStorable<BlockState>{
     private BlockState state;
